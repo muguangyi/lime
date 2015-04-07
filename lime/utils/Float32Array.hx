@@ -23,7 +23,6 @@ abstract Float32Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 			
 			var vector:openfl.Vector<Float> = cast bufferOrArray;
 			var floats:Array<Float> = vector;
-			
 			this = fromArray (floats);
 			
 		} else
@@ -31,28 +30,36 @@ abstract Float32Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 		
 		if (Std.is (bufferOrArray, Int)) {
 			
-			var elements:Int = cast bufferOrArray;
-			this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
+			this = new ArrayBufferView (Std.int (cast bufferOrArray));
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
 			var floats:Array<Float> = cast bufferOrArray;
+			
 			this = fromArray (floats);
+			
+		} else if (Std.is (bufferOrArray, ArrayBufferView)) {
+			
+			var floats:Float32Array = cast bufferOrArray;
+			var length:Int = (length != null) ? length : floats.length - start;
+			
+			var i = new Float32Array (length);
+			
+			for (idx in 0...length)
+				i[idx] = floats[idx + start];
+			
+			this = i;
 			
 		} else {
 			
-			this = cast bufferOrArray;
+			this = new ArrayBufferView ();
+			this.buffer = cast bufferOrArray;
+			this.byteOffset = start;
+			this.byteLength = (length == null) ? Std.int (this.buffer.length) - start : length << 2;
 			
 		}
 		
 	}
-	
-	
-	//public inline function new (elements:Int) {
-		//
-		//this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
-		//
-	//}
 	
 	
 	public inline function set (typedArray:ArrayBufferView, offset:Int = 0):Void {
@@ -98,7 +105,7 @@ abstract Float32Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	}
 	
 	
-	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:Float):Float {
+	@:noCompletion @:arrayAccess public function __set (index:Int, value:Float):Float {
 		
 		if (index >= 0 && index < length) {
 			

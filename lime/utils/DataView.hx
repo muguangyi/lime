@@ -29,7 +29,7 @@ abstract DataView(ArrayBufferView) from ArrayBufferView to ArrayBufferView from 
 	
 	public inline function getFloat64 (byteOffset:Int):Float {
 		
-		return this.buffer.getFloat (byteOffset + this.byteOffset);
+		return this.buffer.getDouble (byteOffset + this.byteOffset);
 		
 	}
 	
@@ -85,7 +85,7 @@ abstract DataView(ArrayBufferView) from ArrayBufferView to ArrayBufferView from 
 	
 	public inline function setFloat64 (byteOffset:Int, value:Float):Void {
 		
-		return this.buffer.setFloat (byteOffset + this.byteOffset, value);
+		return this.buffer.setDouble (byteOffset + this.byteOffset, value);
 		
 	}
 	

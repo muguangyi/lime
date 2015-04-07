@@ -23,7 +23,6 @@ abstract Int16Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 			
 			var vector:openfl.Vector<Int> = cast bufferOrArray;
 			var ints:Array<Int> = vector;
-			
 			this = fromArray (ints);
 			
 		} else
@@ -31,28 +30,36 @@ abstract Int16Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 		
 		if (Std.is (bufferOrArray, Int)) {
 			
-			var elements:Int = cast bufferOrArray;
-			this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
+			this = new ArrayBufferView (Std.int (cast bufferOrArray));
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
 			var ints:Array<Int> = cast bufferOrArray;
+			
 			this = fromArray (ints);
+			
+		} else if (Std.is (bufferOrArray, ArrayBufferView)) {
+			
+			var ints:Int16Array = cast bufferOrArray;
+			var length = (length != null) ? length : ints.length - start;
+			
+			var i = new Int16Array (length);
+			
+			for (idx in 0...length)
+				i[idx] = ints[idx + start];
+			
+			this = i;
 			
 		} else {
 			
-			this = cast bufferOrArray;
+			this = new ArrayBufferView ();
+			this.buffer = cast bufferOrArray;
+			this.byteOffset = start;
+			this.byteLength = (length == null) ? Std.int (this.buffer.length) - start : length << 1;
 			
 		}
 		
 	}
-	
-	
-	//public inline function new (elements:Int) {
-		//
-		//this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
-		//
-	//}
 	
 	
 	public inline function set (typedArray:ArrayBufferView, offset:Int = 0):Void {
