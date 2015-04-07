@@ -1,15 +1,19 @@
 package lime.utils;
-#if (js && !display)
-typedef UInt32Array = js.html.Uint32Array;
-#else
 
 
-@:generic class UInt32Array extends ArrayBufferView implements ArrayAccess<Int> {
+import haxe.io.Bytes;
+import haxe.io.Error;
+
+@:forward(buffer, byteLength, byteOffset)
+
+
+abstract UInt32Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	
 	
 	public static inline var BYTES_PER_ELEMENT = 4;
 	
-	public var length (default, null) : Int;
+	public var length (get, never):Int;
+	public var name (get, never):String;
 	
 	
 	public function new #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, start:Int = 0, length:Null<Int> = null) {
@@ -19,144 +23,114 @@ typedef UInt32Array = js.html.Uint32Array;
 			
 			var vector:openfl.Vector<Int> = cast bufferOrArray;
 			var ints:Array<Int> = vector;
-			this.length = (length != null) ? length : ints.length - start;
 			
-			super (this.length << 2);
+			this = fromArray (ints);
 			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_ui32 (bytes, (i << 2), ints[i + start]);
-				#else
-				buffer.writeInt (ints[i + start]);
-				#end
-				
-			}
-			
-			return;
-			
-		}
+		} else
 		#end
 		
 		if (Std.is (bufferOrArray, Int)) {
 			
-			super (Std.int (cast bufferOrArray) << 2);
-			
-			this.length = cast bufferOrArray;
+			var elements:Int = cast bufferOrArray;
+			this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
 			var ints:Array<Int> = cast bufferOrArray;
-			this.length = (length != null) ? length : ints.length - start;
-			
-			super (this.length << 2);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_ui32 (bytes, (i << 2), ints[i + start]);
-				#else
-				buffer.writeInt (ints[i + start]);
-				#end
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, UInt32Array)) {
-			
-			var ints:UInt32Array = cast bufferOrArray;
-			this.length = (length != null) ? length : ints.length - start;
-			
-			super (this.length << 2);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_ui32 (bytes, (i << 2), ints[i + start]);
-				#else
-				buffer.writeInt (ints[i + start]);
-				#end
-				
-			}
+			this = fromArray (ints);
 			
 		} else {
 			
-			super (bufferOrArray, start, (length != null) ? length << 2 : null);
-			
-			if ((byteLength & 0x03) > 0) {
-				
-				throw "Invalid array size";
-				
-			}
-			
-			this.length = byteLength >> 2;
-			
-			if ((this.length << 2) != byteLength) {
-				
-				throw "Invalid length multiple";
-				
-			}
+			this = cast bufferOrArray;
 			
 		}
 		
 	}
 	
 	
-	public function set #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, offset:Int = 0):Void {
+	//public inline function new (elements:Int) {
+		//
+		//this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
+		//
+	//}
+	
+	
+	public inline function set (typedArray:ArrayBufferView, offset:Int = 0):Void {
 		
-		if (Std.is (bufferOrArray, Array)) {
+		this.buffer.blit (offset, typedArray.buffer, 0, typedArray.byteLength);
+		
+	}
+	
+	
+	public inline function subarray (?begin:Int, ?end:Int):UInt32Array {
+		
+		return this.subarray (begin == null ? null : begin << 2, end == null ? null : end << 2);
+		
+	}
+	
+	
+	public static function fromArray (a:Array<UInt>, pos:Int = 0, ?length:Int):UInt32Array {
+		
+		if (length == null) length = a.length - pos;
+		if (pos < 0 || length < 0 || pos + length > a.length) throw Error.OutsideBounds;
+		
+		var i = new UInt32Array (a.length);
+		
+		for (idx in 0...length)
+			i[idx] = a[idx + pos];
+		
+		return i;
+		
+	}
+	
+	
+	public static function fromBytes (bytes:Bytes, bytePos:Int = 0, ?length:Int):UInt32Array {
+		
+		return ArrayBufferView.fromBytes (bytes, bytePos, (length == null ? (bytes.length - bytePos) >> 2 : length) << 2);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __get (index:Int):UInt {
+		
+		return this.buffer.getInt32 ((index << 2) + this.byteOffset);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:UInt):UInt {
+		
+		if (index >= 0 && index < length) {
 			
-			var ints:Array<Int> = cast bufferOrArray;
-			
-			for (i in 0...ints.length) {
-				
-				setUInt32 ((i + offset) << 2, ints[i]);
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, UInt32Array)) {
-			
-			var ints:UInt32Array = cast bufferOrArray;
-			
-			for (i in 0...ints.length) {
-				
-				setUInt32 ((i + offset) << 2, ints[i]);
-				
-			}
-			
-		} else {
-			
-			throw "Invalid input buffer";
+			this.buffer.setInt32 ((index << 2) + this.byteOffset, value);
+			return value;
 			
 		}
 		
-	}
-	
-	
-	public function subarray (start:Int, end:Null<Int> = null):UInt32Array {
-		
-		end = (end == null) ? length : end;
-		return new UInt32Array (buffer, start << 2, end - start);
+		return 0;
 		
 	}
 	
 	
-	@:noCompletion @:keep inline public function __get (index:Int):Int { return getUInt32 (index << 2); }
-	@:noCompletion @:keep inline public function __set (index:Int, value:Int) { setUInt32 (index << 2, value); }
+	
+	
+	// Get & Set Methods
+	
+	
+	
+	
+	private inline function get_length ():Int {
+		
+		return this.byteLength >> 2;
+		
+	}
+	
+	
+	private inline function get_name ():String {
+		
+		return "UInt32Array";
+		
+	}
 	
 	
 }
-
-
-#end

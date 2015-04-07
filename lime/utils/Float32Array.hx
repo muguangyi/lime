@@ -1,15 +1,19 @@
 package lime.utils;
-#if (js && !display)
-typedef Float32Array = js.html.Float32Array;
-#else
 
 
-@:generic class Float32Array extends ArrayBufferView implements ArrayAccess<Float> {
+import haxe.io.Bytes;
+import haxe.io.Error;
+
+@:forward(buffer, byteLength, byteOffset)
+
+
+abstract Float32Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	
 	
 	public static inline var BYTES_PER_ELEMENT = 4;
 	
-	public var length (default, null):Int;
+	public var length (get, never):Int;
+	public var name (get, never):String;
 	
 	
 	public function new #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, start:Int = 0, length:Null<Int> = null) {
@@ -19,151 +23,114 @@ typedef Float32Array = js.html.Float32Array;
 			
 			var vector:openfl.Vector<Float> = cast bufferOrArray;
 			var floats:Array<Float> = vector;
-			this.length = (length != #if java 0 #else null #end) ? length : floats.length - start;
 			
-			super (this.length << 2);
+			this = fromArray (floats);
 			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_float (bytes, (i << 2), floats[i + start]);
-				#else
-				buffer.writeFloat (floats[i + start]);
-				#end
-				
-			}
-			
-			return;
-			
-		}
+		} else
 		#end
 		
 		if (Std.is (bufferOrArray, Int)) {
 			
-			super (Std.int (cast bufferOrArray) << 2);
-			
-			this.length = cast bufferOrArray;
+			var elements:Int = cast bufferOrArray;
+			this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
 			var floats:Array<Float> = cast bufferOrArray;
-			this.length = (length != #if java 0 #else null #end) ? length : floats.length - start;
-			
-			super (this.length << 2);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_float (bytes, (i << 2), floats[i + start]);
-				#else
-				buffer.writeFloat (floats[i + start]);
-				#end
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, Float32Array)) {
-			
-			var floats:Float32Array = cast bufferOrArray;
-			this.length = (length != #if java 0 #else null #end) ? length : floats.length - start;
-			
-			super (this.length << 2);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_float (bytes, (i << 2), floats[i + start]);
-				#else
-				buffer.writeFloat (floats[i + start]);
-				#end
-				
-			}
+			this = fromArray (floats);
 			
 		} else {
 			
-			super (bufferOrArray, start, #if java length #else (length != null ) ? length << 2 : null #end);
-			
-			if ((byteLength & 0x03) > 0) {
-				
-				throw "Invalid array size";
-				
-			}
-			
-			this.length = byteLength >> 2;
-			
-			if ((this.length << 2) != byteLength) {
-				
-				throw "Invalid length multiple";
-				
-			}
+			this = cast bufferOrArray;
 			
 		}
 		
 	}
 	
 	
-	public function set #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, offset:Int = 0):Void {
+	//public inline function new (elements:Int) {
+		//
+		//this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
+		//
+	//}
+	
+	
+	public inline function set (typedArray:ArrayBufferView, offset:Int = 0):Void {
 		
-		if (Std.is (bufferOrArray, Array)) {
+		this.buffer.blit (offset, typedArray.buffer, 0, typedArray.byteLength);
+		
+	}
+	
+	
+	public inline function subarray (?begin:Int, ?end:Int):Float32Array {
+		
+		return this.subarray (begin == null ? null : begin << 2, end == null ? null : end << 2);
+		
+	}
+	
+	
+	public static function fromArray (a:Array<Float>, pos:Int = 0, ?length:Int):Float32Array {
+		
+		if (length == null) length = a.length - pos;
+		if (pos < 0 || length < 0 || pos + length > a.length) throw Error.OutsideBounds;
+		
+		var i = new Float32Array (a.length);
+		
+		for (idx in 0...length)
+			i[idx] = a[idx + pos];
+		
+		return i;
+		
+	}
+	
+	
+	public static function fromBytes (bytes:Bytes, bytePos:Int = 0, ?length:Int):Float32Array {
+		
+		return ArrayBufferView.fromBytes (bytes, bytePos, (length == null ? (bytes.length - bytePos) >> 2 : length) << 2);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __get (index:Int):Float {
+		
+		return this.buffer.getFloat ((index << 2) + this.byteOffset);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:Float):Float {
+		
+		if (index >= 0 && index < length) {
 			
-			var floats:Array<Float> = cast bufferOrArray;
-			
-			for (i in 0...floats.length) {
-				
-				setFloat32 ((i + offset) << 2, floats[i]);
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, Float32Array)) {
-			
-			var floats:Float32Array = cast bufferOrArray;
-			
-			for (i in 0...floats.length) {
-				
-				setFloat32 ((i + offset) << 2, floats[i]);
-				
-			}
-			
-		} else {
-			
-			throw "Invalid input buffer";
+			this.buffer.setFloat ((index << 2) + this.byteOffset, value);
+			return value;
 			
 		}
 		
-	}
-	
-	
-	public function subarray (start:Int, end:Null<Int> = null):Float32Array {
-		
-		end = (end == null) ? length : end;
-		return new Float32Array (buffer, start << 2, end - start);
+		return 0;
 		
 	}
 	
 	
-	/*public static function fromMatrix (matrix:Matrix3D):Float32Array {
-		
-		return new Float32Array (matrix.rawData);
-		
-	}*/
 	
 	
-	@:noCompletion @:keep inline public function __get (index:Int):Float { return getFloat32 (index << 2); }
-	@:noCompletion @:keep inline public function __set (index:Int, value:Float) { setFloat32 (index << 2, value); }
+	// Get & Set Methods
+	
+	
+	
+	
+	private inline function get_length ():Int {
+		
+		return this.byteLength >> 2;
+		
+	}
+	
+	
+	private inline function get_name ():String {
+		
+		return "Float32Array";
+		
+	}
 	
 	
 }
-
-
-#end

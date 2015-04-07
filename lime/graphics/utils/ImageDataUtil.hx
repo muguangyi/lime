@@ -8,6 +8,7 @@ import lime.math.ColorMatrix;
 import lime.math.Rectangle;
 import lime.math.Vector2;
 import lime.utils.ByteArray;
+import lime.utils.DataView;
 import lime.utils.UInt8Array;
 
 
@@ -229,6 +230,7 @@ class ImageDataUtil {
 		
 		var rgba = (r | (g << 8) | (b << 16) | (a << 24));
 		var data = image.buffer.data;
+		var view:DataView = data;
 		
 		if (rect.width == image.buffer.width && rect.height == image.buffer.height && rect.x == 0 && rect.y == 0 && image.offsetX == 0 && image.offsetY == 0) {
 			
@@ -238,15 +240,7 @@ class ImageDataUtil {
 			for (i in 0...length) {
 				
 				j = i * 4;
-				
-				#if js
-				data[j + 0] = r;
-				data[j + 1] = g;
-				data[j + 2] = b;
-				data[j + 3] = a;
-				#else
-				data.setUInt32 (j, rgba);
-				#end
+				view.setUInt32 (j, rgba);
 				
 			}
 			
@@ -265,15 +259,7 @@ class ImageDataUtil {
 				for (column in columnStart...columnEnd) {
 					
 					offset = (row * stride) + (column * 4);
-					
-					#if js
-					data[offset] = r;
-					data[offset + 1] = g;
-					data[offset + 2] = b;
-					data[offset + 3] = a;
-					#else
-					data.setUInt32 (offset, rgba);
-					#end
+					view.setUInt32 (offset, rgba);
 					
 				}
 				

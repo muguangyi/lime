@@ -1,10 +1,11 @@
 package lime.math;
 
 
+import lime.utils.ArrayBufferView;
 import lime.utils.Float32Array;
 
 
-abstract Matrix4(Float32Array) from Float32Array to Float32Array {
+abstract Matrix4(Float32Array) from Float32Array to Float32Array from ArrayBufferView to ArrayBufferView {
 	
 	
 	private static var __identity = [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ];
@@ -163,14 +164,15 @@ abstract Matrix4(Float32Array) from Float32Array to Float32Array {
 		}
 		
 	}
-
-
+	
+	
 	public function copyFrom (other:Matrix4):Void {
-
+		
 		this.set (other);
-
+		
 	}
-
+	
+	
 	public function copythisFrom( array:Float32Array, index:UInt = 0, transposeValues:Bool = false ) {
 		
 		if ( transposeValues )

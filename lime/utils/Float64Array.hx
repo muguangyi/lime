@@ -7,10 +7,10 @@ import haxe.io.Error;
 @:forward(buffer, byteLength, byteOffset)
 
 
-abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
+abstract Float64Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	
 	
-	public static inline var BYTES_PER_ELEMENT = 1;
+	public static inline var BYTES_PER_ELEMENT = 8;
 	
 	public var length (get, never):Int;
 	public var name (get, never):String;
@@ -21,10 +21,10 @@ abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 		#if (openfl && neko && !lime_legacy)
 		if (Std.is (bufferOrArray, openfl.Vector.VectorData)) {
 			
-			var vector:openfl.Vector<Int> = cast bufferOrArray;
-			var ints:Array<Int> = vector;
+			var vector:openfl.Vector<Float> = cast bufferOrArray;
+			var floats:Array<Float> = vector;
 			
-			this = fromArray (ints);
+			this = fromArray (floats);
 			
 		} else
 		#end
@@ -36,8 +36,8 @@ abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
-			var ints:Array<Int> = cast bufferOrArray;
-			this = fromArray (ints);
+			var floats:Array<Float> = cast bufferOrArray;
+			this = fromArray (floats);
 			
 		} else {
 			
@@ -62,19 +62,19 @@ abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	}
 	
 	
-	public inline function subarray (?begin:Int, ?end:Int):Int8Array {
+	public inline function subarray (?begin:Int, ?end:Int):Float64Array {
 		
-		return this.subarray (begin, end);
+		return this.subarray (begin == null ? null : begin << 3, end == null ? null : end << 3);
 		
 	}
 	
 	
-	public static function fromArray (a:Array<Int>, pos:Int = 0, ?length:Int):Int8Array {
+	public static function fromArray (a:Array<Float>, pos:Int = 0, ?length:Int):Float64Array {
 		
 		if (length == null) length = a.length - pos;
 		if (pos < 0 || length < 0 || pos + length > a.length) throw Error.OutsideBounds;
 		
-		var i = new Int8Array (a.length);
+		var i = new Float64Array (a.length);
 		
 		for (idx in 0...length)
 			i[idx] = a[idx + pos];
@@ -84,26 +84,25 @@ abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	}
 	
 	
-	public static function fromBytes (bytes:Bytes, bytePos:Int = 0, ?length:Int):Int8Array {
+	public static function fromBytes (bytes:Bytes, bytePos:Int = 0, ?length:Int):Float64Array {
 		
-		return ArrayBufferView.fromBytes (bytes, bytePos, length);
-		
-	}
-	
-	
-	
-	@:noCompletion @:arrayAccess public inline function __get (index:Int):Int {
-		
-		return this.buffer.get (index + this.byteOffset);
+		return ArrayBufferView.fromBytes (bytes, bytePos, (length == null ? (bytes.length - bytePos) >> 3 : length) << 3);
 		
 	}
 	
 	
-	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:Int):Int {
+	@:noCompletion @:arrayAccess public inline function __get (index:Int):Float {
+		
+		return this.buffer.getFloat ((index << 3) + this.byteOffset);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:Float):Float {
 		
 		if (index >= 0 && index < length) {
 			
-			this.buffer.set (index + this.byteOffset, value);
+			this.buffer.setFloat ((index << 3) + this.byteOffset, value);
 			return value;
 			
 		}
@@ -122,14 +121,14 @@ abstract Int8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	
 	private inline function get_length ():Int {
 		
-		return this.byteLength;
+		return this.byteLength >> 3;
 		
 	}
 	
 	
 	private inline function get_name ():String {
 		
-		return "Int8Array";
+		return "Float64Array";
 		
 	}
 	

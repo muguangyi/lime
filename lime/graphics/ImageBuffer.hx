@@ -87,7 +87,7 @@ class ImageBuffer {
 		if (data != null) {
 			
 			buffer.data = new UInt8Array (data.byteLength);
-			var copy = new UInt8Array (data);
+			var copy = UInt8Array.fromBytes (data.buffer);
 			buffer.data.set (copy);
 			
 		}

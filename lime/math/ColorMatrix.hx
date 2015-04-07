@@ -1,6 +1,7 @@
 package lime.math;
 
 
+import lime.utils.ArrayBufferView;
 import lime.utils.Float32Array;
 
 #if flash
@@ -8,7 +9,7 @@ import flash.geom.ColorTransform;
 #end
 
 
-abstract ColorMatrix(Float32Array) from Float32Array to Float32Array {
+abstract ColorMatrix(Float32Array) from Float32Array to Float32Array from ArrayBufferView to ArrayBufferView {
 	
 	
 	private static var __identity = [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ];

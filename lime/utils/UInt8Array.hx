@@ -1,15 +1,19 @@
 package lime.utils;
-#if (js && !display)
-typedef UInt8Array = js.html.Uint8Array;
-#else
 
 
-@:generic class UInt8Array extends ArrayBufferView implements ArrayAccess<Int> {
+import haxe.io.Bytes;
+import haxe.io.Error;
+
+@:forward(buffer, byteLength, byteOffset)
+
+
+abstract UInt8Array(ArrayBufferView) from ArrayBufferView to ArrayBufferView {
 	
 	
 	public static inline var BYTES_PER_ELEMENT = 1;
 	
-	public var length (default, null):Int;
+	public var length (get, never):Int;
+	public var name (get, never):String;
 	
 	
 	public function new #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, start:Int = 0, length:Null<Int> = null) {
@@ -19,132 +23,114 @@ typedef UInt8Array = js.html.Uint8Array;
 			
 			var vector:openfl.Vector<Int> = cast bufferOrArray;
 			var ints:Array<Int> = vector;
-			this.length = (length != null) ? length : ints.length - start;
 			
-			super (this.length);
+			this = fromArray (ints);
 			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_byte (bytes, i, ints[i + start]);
-				#else
-				buffer.writeByte (ints[i + start]);
-				#end
-				
-			}
-			
-			return;
-			
-		}
+		} else
 		#end
 		
 		if (Std.is (bufferOrArray, Int)) {
 			
-			super (Std.int (cast bufferOrArray));
-			
-			this.length = cast bufferOrArray;
+			var elements:Int = cast bufferOrArray;
+			this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
 			
 		} else if (Std.is (bufferOrArray, Array)) {
 			
 			var ints:Array<Int> = cast bufferOrArray;
-			this.length = (length != null) ? length : ints.length - start;
-			
-			super (this.length);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_byte (bytes, i, ints[i + start]);
-				#else
-				buffer.writeByte (ints[i + start]);
-				#end
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, UInt8Array)) {
-			
-			var ints:UInt8Array = cast bufferOrArray;
-			this.length = (length != null) ? length : ints.length - start;
-			
-			super (this.length);
-			
-			#if !cpp
-			buffer.position = 0;
-			#end
-			
-			for (i in 0...this.length) {
-				
-				#if cpp
-				untyped __global__.__hxcpp_memory_set_byte (bytes, i, ints[i + start]);
-				#else
-				buffer.writeByte (ints[i + start]);
-				#end
-				
-			}
+			this = fromArray (ints);
 			
 		} else {
 			
-			super (bufferOrArray, start, length);
-			
-			this.length = byteLength;
+			this = cast bufferOrArray;
 			
 		}
 		
 	}
 	
 	
-	public function set #if !java <T> #end (bufferOrArray:#if !java T #else Dynamic #end, offset:Int = 0):Void {
+	//public inline function new (elements:Int) {
+		//
+		//this = new ArrayBufferView (elements * BYTES_PER_ELEMENT);
+		//
+	//}
+	
+	
+	public inline function set (typedArray:ArrayBufferView, offset:Int = 0):Void {
 		
-		if (Std.is (bufferOrArray, Array)) {
+		this.buffer.blit (offset, typedArray.buffer, 0, typedArray.byteLength);
+		
+	}
+	
+	
+	public inline function subarray (?begin:Int, ?end:Int):UInt8Array {
+		
+		return this.subarray (begin, end);
+		
+	}
+	
+	
+	public static function fromArray (a:Array<Int>, pos = 0, ?length:Int):UInt8Array {
+		
+		if (length == null) length = a.length - pos;
+		if (pos < 0 || length < 0 || pos + length > a.length) throw Error.OutsideBounds;
+		
+		var i = new UInt8Array (a.length);
+		
+		for (idx in 0...length)
+			i[idx] = a[idx + pos];
+		
+		return i;
+		
+	}
+	
+	
+	public static function fromBytes (bytes:Bytes, bytePos:Int = 0, ?length:Int):UInt8Array {
+		
+		return ArrayBufferView.fromBytes (bytes, bytePos, length);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __get (index:Int):Int {
+		
+		return this.buffer.get (index + this.byteOffset);
+		
+	}
+	
+	
+	@:noCompletion @:arrayAccess public inline function __set (index:Int, value:Int):Int {
+		
+		if (index >= 0 && index < length ) {
 			
-			var ints:Array<Int> = cast bufferOrArray;
-			
-			for (i in 0...ints.length) {
-				
-				setUInt8 (i + offset, ints[i]);
-				
-			}
-			
-		} else if (Std.is (bufferOrArray, UInt8Array)) {
-			
-			var ints:UInt8Array = cast bufferOrArray;
-			
-			for (i in 0...ints.length) {
-				
-				setUInt8 (i + offset, ints[i]);
-				
-			}
-			
-		} else {
-			
-			throw "Invalid input buffer";
+			this.buffer.set (index + this.byteOffset, value);
+			return value;
 			
 		}
 		
-	}
-	
-	
-	public function subarray (start:Int, end:Null<Int> = null):UInt8Array {
-		
-		end = (end == null) ? length : end;
-		return new UInt8Array (buffer, start, end - start);
+		return 0;
 		
 	}
 	
 	
-	@:noCompletion @:keep inline public function __get (index:Int):Int { return getUInt8 (index); }
-	@:noCompletion @:keep inline public function __set (index:Int, value:Int) { setUInt8 (index, value); }
+	
+	
+	// Get & Set Methods
+	
+	
+	
+	
+	private inline function get_length ():Int {
+		
+		return this.byteLength;
+		
+	}
+	
+	
+	private inline function get_name ():String {
+		
+		return "UInt8Array";
+		
+	}
 	
 	
 }
-
-
-#end
