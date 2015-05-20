@@ -23,6 +23,7 @@ class Application extends Module {
 	public static var current (default, null):Application;
 	
 	public var config (default, null):Config;
+	public var frameRate (get, set):Float;
 	public var modules (default, null):Array<IModule>;
 	
 	/**
@@ -113,15 +114,19 @@ class Application extends Module {
 		window.onMouseMoveRelative.add (onMouseMoveRelative);
 		window.onMouseUp.add (onMouseUp);
 		window.onMouseWheel.add (onMouseWheel);
+		window.onTextEdit.add (onTextEdit);
+		window.onTextInput.add (onTextInput);
 		window.onTouchStart.add (onTouchStart);
 		window.onTouchMove.add (onTouchMove);
 		window.onTouchEnd.add (onTouchEnd);
 		window.onWindowActivate.add (onWindowActivate);
 		window.onWindowClose.add (onWindowClose);
 		window.onWindowDeactivate.add (onWindowDeactivate);
+		window.onWindowEnter.add (onWindowEnter);
 		window.onWindowFocusIn.add (onWindowFocusIn);
 		window.onWindowFocusOut.add (onWindowFocusOut);
 		window.onWindowFullscreen.add (onWindowFullscreen);
+		window.onWindowLeave.add (onWindowLeave);
 		window.onWindowMinimize.add (onWindowMinimize);
 		window.onWindowMove.add (onWindowMove);
 		window.onWindowResize.add (onWindowResize);
@@ -327,6 +332,28 @@ class Application extends Module {
 	}
 	
 	
+	public override function onTextEdit (text:String, start:Int, length:Int):Void {
+		
+		for (module in modules) {
+			
+			module.onTextEdit (text, start, length);
+			
+		}
+		
+	}
+	
+	
+	public override function onTextInput (text:String):Void {
+		
+		for (module in modules) {
+			
+			module.onTextInput (text);
+			
+		}
+		
+	}
+	
+	
 	public override function onTouchEnd (x:Float, y:Float, id:Int):Void {
 		
 		for (module in modules) {
@@ -393,6 +420,17 @@ class Application extends Module {
 	}
 	
 	
+	public override function onWindowEnter ():Void {
+		
+		for (module in modules) {
+			
+			module.onWindowEnter ();
+			
+		}
+		
+	}
+	
+	
 	public override function onWindowFocusIn ():Void {
 		
 		for (module in modules) {
@@ -420,6 +458,17 @@ class Application extends Module {
 		for (module in modules) {
 			
 			module.onWindowFullscreen ();
+			
+		}
+		
+	}
+	
+	
+	public override function onWindowLeave ():Void {
+		
+		for (module in modules) {
+			
+			module.onWindowLeave ();
 			
 		}
 		
@@ -539,6 +588,20 @@ class Application extends Module {
 	// Get & Set Methods
 	
 	
+	
+	
+	@:noCompletion private inline function get_frameRate ():Float {
+		
+		return backend.getFrameRate ();
+		
+	}
+	
+	
+	@:noCompletion private inline function set_frameRate (value:Float):Float {
+		
+		return backend.setFrameRate (value);
+		
+	}
 	
 	
 	@:noCompletion private inline function get_renderer ():Renderer {

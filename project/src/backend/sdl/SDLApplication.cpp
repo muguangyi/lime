@@ -27,6 +27,8 @@ namespace lime {
 		
 		currentApplication = this;
 		
+		framePeriod = 1000.0 / 60.0;
+		
 		#ifdef EMSCRIPTEN
 		emscripten_cancel_main_loop ();
 		emscripten_set_main_loop (UpdateFrame, 0, 0);
@@ -41,6 +43,7 @@ namespace lime {
 		KeyEvent keyEvent;
 		MouseEvent mouseEvent;
 		RenderEvent renderEvent;
+		TextEvent textEvent;
 		TouchEvent touchEvent;
 		UpdateEvent updateEvent;
 		WindowEvent windowEvent;
@@ -145,10 +148,18 @@ namespace lime {
 				ProcessMouseEvent (event);
 				break;
 			
+			case SDL_TEXTINPUT:
+			case SDL_TEXTEDITING:
+				
+				ProcessTextEvent (event);
+				break;
+			
 			case SDL_WINDOWEVENT:
 				
 				switch (event->window.event) {
 					
+					case SDL_WINDOWEVENT_ENTER:
+					case SDL_WINDOWEVENT_LEAVE:
 					case SDL_WINDOWEVENT_SHOWN:
 					case SDL_WINDOWEVENT_HIDDEN:
 					case SDL_WINDOWEVENT_FOCUS_GAINED:
@@ -194,7 +205,6 @@ namespace lime {
 	
 	void SDLApplication::Init () {
 		
-		framePeriod = 1000.0 / 60.0;
 		active = true;
 		lastUpdate = SDL_GetTicks ();
 		nextUpdate = lastUpdate;
@@ -335,6 +345,35 @@ namespace lime {
 	}
 	
 	
+	void SDLApplication::ProcessTextEvent (SDL_Event* event) {
+		
+		if (TextEvent::callback) {
+			
+			switch (event->type) {
+				
+				case SDL_TEXTINPUT:
+					
+					textEvent.type = TEXT_INPUT;
+					break;
+				
+				case SDL_TEXTEDITING:
+					
+					textEvent.type = TEXT_EDIT;
+					textEvent.start = event->edit.start;
+					textEvent.length = event->edit.length;
+					break;
+				
+			}
+			
+			strcpy (textEvent.text, event->text.text);
+			
+			TextEvent::Dispatch (&textEvent);
+			
+		}
+		
+	}
+	
+	
 	void SDLApplication::ProcessTouchEvent (SDL_Event* event) {
 		
 		
@@ -351,8 +390,10 @@ namespace lime {
 				case SDL_WINDOWEVENT_SHOWN: windowEvent.type = WINDOW_ACTIVATE; break;
 				case SDL_WINDOWEVENT_CLOSE: windowEvent.type = WINDOW_CLOSE; break;
 				case SDL_WINDOWEVENT_HIDDEN: windowEvent.type = WINDOW_DEACTIVATE; break;
+				case SDL_WINDOWEVENT_ENTER: windowEvent.type = WINDOW_ENTER; break;
 				case SDL_WINDOWEVENT_FOCUS_GAINED: windowEvent.type = WINDOW_FOCUS_IN; break;
 				case SDL_WINDOWEVENT_FOCUS_LOST: windowEvent.type = WINDOW_FOCUS_OUT; break;
+				case SDL_WINDOWEVENT_LEAVE: windowEvent.type = WINDOW_LEAVE; break;
 				case SDL_WINDOWEVENT_MINIMIZED: windowEvent.type = WINDOW_MINIMIZE; break;
 				
 				case SDL_WINDOWEVENT_MOVED:
@@ -397,6 +438,21 @@ namespace lime {
 		#ifdef IPHONE
 		SDL_iPhoneSetAnimationCallback (window->sdlWindow, 1, UpdateFrame, NULL);
 		#endif
+		
+	}
+	
+	
+	void SDLApplication::SetFrameRate (double frameRate) {
+		
+		if (frameRate > 0) {
+			
+			framePeriod = 1000.0 / frameRate;
+			
+		} else {
+			
+			framePeriod = 1000.0;
+			
+		}
 		
 	}
 	

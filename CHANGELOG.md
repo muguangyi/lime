@@ -1,3 +1,55 @@
+2.4.1 (05/13/2015)
+------------------
+
+* Improve handling of custom error types in HTML5 target
+* Guard icon helpers if PNG encoding fails
+* Fixed Emscripten rebuild
+* Fixed issue on the build server
+
+
+2.4.0 (05/12/2015)
+------------------
+
+* Added Cairo render context and bindings
+* Added support for software windows, using Cairo not OpenGL
+* Added text input/edit events
+* Added onEnter/onLeave events for Window mouse focus
+* Added Image getColorBoundsRect
+* Added build support for ANGLE
+* Removed prevent default for HTML5 arrow and space keys
+* Improved Image copyPixels with merge alpha
+* Fixed static build support
+* Fixed a case where fonts might not be embedded
+* Fixed occasional crash with OpenAL on Neko
+
+
+2.3.3 (04/21/2015)
+------------------
+
+* Added audioSource.loops, audioSource.offset, audioSource.length
+* Renamed audioSource.timeOffset to audioSource.currentTime
+* Fixed onComplete for AudioSource instances
+* Fixed support for embedded bytes on HTML5
+* Fixed support for hardware anti-aliasing on SDL2 targets
+* Fixed some loose file handles in the format decoders
+* Fixed a possible crash in copyPixels
+* Improved accuracy of URLLoader progress
+
+
+2.3.2 (04/15/2015)
+------------------
+
+* Improved performance of pixel-based operations in Image
+* Added support for RGBA (default) and ARGB color order
+* Added --port=123 to change the webserver port on HTML5 builds 
+* Added support for Unicode Windows system paths
+* Added larger icon sizes requested by Windows 10
+* Improved functionality of BMP.encode
+* Fixed compilation on Android without Sound.java
+* Fixed support for -Doptional-cffi
+* Fixed haxe.Timer (legacy)
+
+
 2.3.1 (04/08/2015)
 ------------------
 
